@@ -9,7 +9,7 @@ Register a new user. The endpoint validates input, hashes the password, stores t
 - Method: POST
 - URL: /users/register
 - Headers:
-  - Content-Type: application/json
+- Content-Type: application/json
 
 ## Request body
 JSON payload (application/json):
@@ -98,4 +98,204 @@ curl -X POST http://localhost:3000/users/register \
 
 ---
 
-File created: `Backend/REGISTER.md` — let me know if you want this content moved into `README.md` or expanded with examples for error cases. ✅
+# POST /users/login ✅
+
+**Description**
+Authenticate a user. The endpoint validates credentials and, on success, returns a JWT token and the authenticated user's public profile (the response should not include the hashed password).
+
+---
+
+## Endpoint
+- Method: POST
+- URL: /users/login
+- Headers:
+  - Content-Type: application/json
+
+## Request body
+JSON payload (application/json):
+
+```json
+{
+  "email": "john.doe@example.com",
+  "password": "secret123"
+}
+```
+
+Field rules:
+- `email` (string) — required, must be a valid email
+- `password` (string) — required
+
+---
+
+## Success response
+- **200 OK**
+
+Example HTTP response:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{
+  "token": "<jwt-token-string>",
+  "user": {
+    "_id": "64f0b5f0a1d2c1a1b2c3d4e5",
+    "fullName": { "firstName": "John", "lastName": "Doe" },
+    "email": "john.doe@example.com",
+    "socketId": null
+  }
+}
+```
+
+> Note: The response should not include the `password` field. If your implementation currently includes it, remove it before sending the response (see `controller/user.controller.js`).
+
+---
+
+## Error responses
+- **400 Bad Request** — validation error
+```json
+{ "errors": [ { "msg": "Invalid email address", "param": "email", ... } ] }
+```
+
+- **401 Unauthorized** — invalid credentials
+```json
+{ "error": "Invalid email or password" }
+```
+
+- **500 Internal Server Error** — unexpected errors
+```json
+{ "error": "Internal Server Error" }
+```
+
+---
+
+## Example curl
+
+```bash
+curl -X POST http://localhost:3000/users/login \
+  -H "Content-Type: application/json" \
+  -d '{ "email": "john.doe@example.com", "password": "secret123" }'
+```
+
+---
+
+## Tips & notes
+- Ensure `JWT_SECRET` is set so tokens can be created and verified.
+- For security, consider rate-limiting this endpoint and returning generic error messages for failed logins.
+- There's a bug in `routes/user.routes.js` using `router.post('./login', ...)` — it should be `'/login'`. Also ensure `user.controller.js` doesn't return the hashed password in responses.
+
+---
+
+# GET /users/profile ✅
+
+**Description**
+Fetch the authenticated user's profile. Requires a valid JWT token sent either as an httpOnly cookie (`token`) or an `Authorization: Bearer <token>` header.
+
+---
+
+## Endpoint
+- Method: GET
+- URL: /users/profile
+- Headers:
+  - Optional: `Cookie: token=<jwt>` or `Authorization: Bearer <jwt>`
+
+## Success response
+- **200 OK**
+
+Example HTTP response:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{
+  "_id": "64f0b5f0a1d2c1a1b2c3d4e5",
+  "fullName": { "firstName": "John", "lastName": "Doe" },
+  "email": "john.doe@example.com",
+  "socketId": null
+}
+```
+
+---
+
+## Error responses
+- **401 Unauthorized** — missing or invalid token
+```json
+{ "error": "Access denied. No token provided." }
+```
+
+```json
+{ "message": "Invalid token." }
+```
+
+
+---
+
+# GET /users/logout ✅
+
+**Description**
+Log the user out by clearing the `token` cookie (if present) and blacklisting the token on the server for 24 hours. Requires authentication.
+
+---
+
+## Endpoint
+- Method: GET
+- URL: /users/logout
+- Headers:
+  - Optional: `Cookie: token=<jwt>` or `Authorization: Bearer <jwt>`
+
+## Success response
+- **200 OK**
+
+Example HTTP response:
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+
+{ "message": "Logged out successfully" }
+```
+
+> Notes: The server stores blacklisted tokens in a TTL collection for 24 hours, preventing reuse until they expire.
+
+---
+
+## Error responses
+- **400 Bad Request** — no token provided
+```json
+{ "error": "No token provided" }
+```
+
+- **401 Unauthorized** — token already invalid or blacklisted
+```json
+{ "message": "Unauthorized" }
+```
+
+- **500 Internal Server Error** — server/database error
+```json
+{ "error": "Server error" }
+```
+
+---
+
+## Example curl (using header)
+
+```bash
+# Fetch profile
+curl -X GET http://localhost:3000/users/profile -H "Authorization: Bearer <jwt>"
+
+# Logout
+curl -X GET http://localhost:3000/users/logout -H "Authorization: Bearer <jwt>"
+```
+
+## Example curl (using cookie)
+
+```bash
+# Set cookie in the request
+curl -b "token=<jwt>" http://localhost:3000/users/profile
+curl -b "token=<jwt>" http://localhost:3000/users/logout
+```
+
+---
+
+

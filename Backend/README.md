@@ -298,4 +298,54 @@ curl -b "token=<jwt>" http://localhost:3000/users/logout
 
 ---
 
+# Captain routes (POST /captains/register) ✅
+
+**Description**
+Register a new captain (driver). The endpoint validates input, hashes the password, stores the captain in MongoDB, and returns a JWT token.
+
+## Endpoint
+- Method: POST
+- URL: `/captains/register`
+- Headers: `Content-Type: application/json`
+
+## Request body (JSON) — example
+```json
+{
+  "fullName": { "firstName": "John", "lastName": "Doe" },
+  "email": "john@example.com",
+  "password": "secret123",
+  "vehicle": { "color": "red", "plateNumber": "ABC123", "capacity": 4, "vehicleType": "car" }
+}
+```
+
+## Validation rules (from `routes/captain.routes.js`)
+- `fullName.firstName` — required, min 3 characters
+- `fullName.lastName` — required, min 3 characters
+- `email` — required, valid email
+- `password` — required, min 6 characters
+- `vehicle.color` — required, min 3 characters
+- `vehicle.plateNumber` — required, min 3 characters
+- `vehicle.capacity` — required, integer ≥ 1
+- `vehicle.vehicleType` — required, one of: `bike`, `car`, `auto`
+
+## Success response
+- **201 Created** — returns `{ captain, token }` where `captain` includes public fields (no `password`).
+
+## Error responses
+- **400 Bad Request** — validation errors (express-validator). Example:
+```json
+{ "errors": [ { "msg": "First name must be at least 3 characters long", "path": "fullName.firstName" } ] }
+```
+- **400 Bad Request** — duplicate email: `{ "error": "Captain with this email already exists" }`
+- **500 Internal Server Error** — unexpected or DB errors
+
+## Notes & troubleshooting
+- Ensure `JWT_SECRET` and `MONGO_URI` environment variables are set.
+- Ensure request body keys and nesting exactly match the examples and `Content-Type: application/json` header is present.
+
+---
+
+
+---
+
 

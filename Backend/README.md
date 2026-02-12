@@ -298,50 +298,177 @@ curl -b "token=<jwt>" http://localhost:3000/users/logout
 
 ---
 
-# Captain routes (POST /captains/register) ✅
+# Captain routes ✅
 
-**Description**
-Register a new captain (driver). The endpoint validates input, hashes the password, stores the captain in MongoDB, and returns a JWT token.
+All `/captains` endpoints use `Content-Type: application/json` and require/return JSON. Authentication accepts either an httpOnly cookie `token` or `Authorization: Bearer <token>` header.
 
-## Endpoint
+---
+
+## POST /captains/register 🔧
+
+Description: register a new captain (driver). Validates input, hashes password, saves to MongoDB and returns a JWT.
+
 - Method: POST
 - URL: `/captains/register`
 - Headers: `Content-Type: application/json`
 
-## Request body (JSON) — example
-```json
+Request body (JSON with inline comments showing requirements):
+
+```jsonc
 {
-  "fullName": { "firstName": "John", "lastName": "Doe" },
-  "email": "john@example.com",
-  "password": "secret123",
-  "vehicle": { "color": "red", "plateNumber": "ABC123", "capacity": 4, "vehicleType": "car" }
+  "fullName": {
+    "firstName": "John",      // required, min length: 3
+    "lastName": "Doe"         // required, min length: 3
+  },
+  "email": "john@example.com", // required, must be a valid email
+  "password": "secret123",     // required, min length: 6
+  "vehicle": {
+    "color": "red",            // required, min length: 3
+    "plateNumber": "ABC123",   // required, min length: 3
+    "capacity": 4,               // required, integer >= 1
+    "vehicleType": "car"       // required, one of: "bike", "car", "auto"
+  }
 }
 ```
 
-## Validation rules (from `routes/captain.routes.js`)
-- `fullName.firstName` — required, min 3 characters
-- `fullName.lastName` — required, min 3 characters
-- `email` — required, valid email
-- `password` — required, min 6 characters
-- `vehicle.color` — required, min 3 characters
-- `vehicle.plateNumber` — required, min 3 characters
-- `vehicle.capacity` — required, integer ≥ 1
-- `vehicle.vehicleType` — required, one of: `bike`, `car`, `auto`
+Success response (201 Created):
 
-## Success response
-- **201 Created** — returns `{ captain, token }` where `captain` includes public fields (no `password`).
-
-## Error responses
-- **400 Bad Request** — validation errors (express-validator). Example:
-```json
-{ "errors": [ { "msg": "First name must be at least 3 characters long", "path": "fullName.firstName" } ] }
+```jsonc
+{
+  "captain": {
+    "_id": "<captain-id>",
+    "fullName": { "firstName": "John", "lastName": "Doe" },
+    "email": "john@example.com",
+    "vehicle": { "color": "red", "plateNumber": "ABC123", "capacity": 4, "vehicleType": "car" },
+    "socketId": null               // public profile field; password is NOT returned
+  },
+  "token": "<jwt-token-string>"  // store in cookie or use in Authorization header
+}
 ```
-- **400 Bad Request** — duplicate email: `{ "error": "Captain with this email already exists" }`
-- **500 Internal Server Error** — unexpected or DB errors
 
-## Notes & troubleshooting
-- Ensure `JWT_SECRET` and `MONGO_URI` environment variables are set.
-- Ensure request body keys and nesting exactly match the examples and `Content-Type: application/json` header is present.
+Errors:
+- 400 — validation errors (see `errors` array from `express-validator`).
+- 400 — duplicate email: `{ "error": "Captain with this email already exists" }`.
+- 500 — server / DB errors.
+
+Example curl:
+
+```bash
+curl -X POST http://localhost:3000/captains/register \
+  -H "Content-Type: application/json" \
+  -d '{ "fullName": { "firstName": "John", "lastName": "Doe" }, "email": "john@example.com", "password": "secret123", "vehicle": { "color": "red", "plateNumber": "ABC123", "capacity": 4, "vehicleType": "car" } }'
+```
+
+---
+
+## POST /captains/login 🔐
+
+Description: authenticate a captain and return a JWT. Server also sets an httpOnly cookie named `token`.
+
+- Method: POST
+- URL: `/captains/login`
+- Headers: `Content-Type: application/json`
+
+Request body (JSON with requirements):
+
+```jsonc
+{
+  "email": "john@example.com",   // required, valid email
+  "password": "secret123"        // required
+}
+```
+
+Success response (200 OK):
+
+```jsonc
+{
+  "token": "<jwt-token-string>",  // also set as httpOnly cookie `token`
+  "captain": {
+    "_id": "<captain-id>",
+    "fullName": { "firstName": "John", "lastName": "Doe" },
+    "email": "john@example.com",
+    "vehicle": { "color": "red", "plateNumber": "ABC123", "capacity": 4, "vehicleType": "car" }
+    // password is NEVER returned
+  }
+}
+```
+
+Errors:
+- 400 — validation errors or invalid credentials (`{ "error": "Invalid email or password" }`).
+- 500 — server errors.
+
+Example curl:
+
+```bash
+curl -X POST http://localhost:3000/captains/login \
+  -H "Content-Type: application/json" \
+  -d '{ "email": "john@example.com", "password": "secret123" }'
+```
+
+---
+
+## GET /captains/profile 👤
+
+Description: return the authenticated captain's public profile. Requires authentication (cookie `token` or `Authorization: Bearer <token>`).
+
+- Method: GET
+- URL: `/captains/profile`
+- Headers: `Cookie: token=<jwt>` OR `Authorization: Bearer <jwt>`
+
+Success response (200 OK):
+
+```json
+{
+  "_id": "<captain-id>",
+  "fullName": { "firstName": "John", "lastName": "Doe" },
+  "email": "john@example.com",
+  "vehicle": { "color": "red", "plateNumber": "ABC123", "capacity": 4, "vehicleType": "car" },
+  "socketId": null
+}
+```
+
+Errors:
+- 401 — missing or blacklisted/invalid token.
+- 404 — captain not found.
+- 500 — server error.
+
+Example curl:
+
+```bash
+curl -X GET http://localhost:3000/captains/profile -H "Authorization: Bearer <jwt>"
+```
+
+---
+
+## GET /captains/logout 🚪
+
+Description: logs out the captain by blacklisting the token (TTL) and clearing the `token` cookie.
+
+- Method: GET
+- URL: `/captains/logout`
+- Headers: `Cookie: token=<jwt>` OR `Authorization: Bearer <jwt>`
+
+Success response (200 OK):
+
+```json
+{ "message": "Logged out successfully" }
+```
+
+Notes:
+- The server stores blacklisted tokens in a TTL collection (prevents reuse until expiry).
+- After logout the `token` cookie is cleared.
+
+Example curl:
+
+```bash
+curl -X GET http://localhost:3000/captains/logout -H "Authorization: Bearer <jwt>"
+```
+
+---
+
+## Implementation references
+- Validation rules are defined in `routes/captain.routes.js`.
+- Hashing & token generation live in `models/captain.model.js` and `services/captain.services.js`.
 
 ---
 

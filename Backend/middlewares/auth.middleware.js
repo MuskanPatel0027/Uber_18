@@ -1,6 +1,8 @@
 const userModel = require("../models/user.models");
 const jwt = require("jsonwebtoken");
 const blacklistModel = require("../models/blacklistToken.models");
+const captainModel = require("../models/captain.model");
+
 
 module.exports.authUser = async (req, res, next) => {
   // Support token from either an httpOnly cookie or Authorization header (Bearer <token>)
@@ -31,5 +33,39 @@ module.exports.authUser = async (req, res, next) => {
     return next();
   } catch (err) {
     return res.status(400).json({ message: "Invalid token." });
+  }
+};
+
+module.exports.authCaptain = async (req, res, next) => {
+  const cookieToken = req.cookies && req.cookies.token;
+  const authHeader = req.headers && req.headers.authorization;
+
+  let token;
+
+  if (cookieToken) token = cookieToken;
+  else if (authHeader && authHeader.startsWith("Bearer "))
+    token = authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const isBlacklisted = await blacklistModel.findOne({ token });
+  if (isBlacklisted) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const captain = await captainModel.findById(decoded._id);
+
+    if (!captain) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    req.captain = captain;
+    return next();
+  } catch (err) {
+    return res.status(400).json({ message: "Invalid token" });
   }
 };

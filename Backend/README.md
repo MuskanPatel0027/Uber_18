@@ -324,7 +324,7 @@ Request body (JSON with inline comments showing requirements):
   "password": "secret123",     // required, min length: 6
   "vehicle": {
     "color": "red",            // required, min length: 3
-    "plateNumber": "ABC123",   // required, min length: 3
+    "plate": "ABC123",   // required, min length: 3
     "capacity": 4,               // required, integer >= 1
     "vehicleType": "car"       // required, one of: "bike", "car", "auto"
   }
@@ -339,7 +339,7 @@ Success response (201 Created):
     "_id": "<captain-id>",
     "fullName": { "firstName": "John", "lastName": "Doe" },
     "email": "john@example.com",
-    "vehicle": { "color": "red", "plateNumber": "ABC123", "capacity": 4, "vehicleType": "car" },
+    "vehicle": { "color": "red", "plate": "ABC123", "capacity": 4, "vehicleType": "car" },
     "socketId": null               // public profile field; password is NOT returned
   },
   "token": "<jwt-token-string>"  // store in cookie or use in Authorization header
@@ -356,7 +356,7 @@ Example curl:
 ```bash
 curl -X POST http://localhost:3000/captains/register \
   -H "Content-Type: application/json" \
-  -d '{ "fullName": { "firstName": "John", "lastName": "Doe" }, "email": "john@example.com", "password": "secret123", "vehicle": { "color": "red", "plateNumber": "ABC123", "capacity": 4, "vehicleType": "car" } }'
+  -d '{ "fullName": { "firstName": "John", "lastName": "Doe" }, "email": "john@example.com", "password": "secret123", "vehicle": { "color": "red", "plate": "ABC123", "capacity": 4, "vehicleType": "car" } }'
 ```
 
 ---
@@ -387,7 +387,7 @@ Success response (200 OK):
     "_id": "<captain-id>",
     "fullName": { "firstName": "John", "lastName": "Doe" },
     "email": "john@example.com",
-    "vehicle": { "color": "red", "plateNumber": "ABC123", "capacity": 4, "vehicleType": "car" }
+    "vehicle": { "color": "red", "plate": "ABC123", "capacity": 4, "vehicleType": "car" }
     // password is NEVER returned
   }
 }
@@ -422,7 +422,7 @@ Success response (200 OK):
   "_id": "<captain-id>",
   "fullName": { "firstName": "John", "lastName": "Doe" },
   "email": "john@example.com",
-  "vehicle": { "color": "red", "plateNumber": "ABC123", "capacity": 4, "vehicleType": "car" },
+  "vehicle": { "color": "red", "plate": "ABC123", "capacity": 4, "vehicleType": "car" },
   "socketId": null
 }
 ```

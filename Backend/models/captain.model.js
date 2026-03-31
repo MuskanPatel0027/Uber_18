@@ -3,13 +3,13 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
 const captainSchema = new mongoose.Schema({
-    fullName : {
-        firstName: {
+    fullname : {
+        firstname: {
             type: String,
             required: true,
             minlength: [3, 'First name must be at least 3 characters long']
     },
-        lastName: {
+        lastname: {
             type: String,
             required: true,
             minlength: [3, 'Last name must be at least 3 characters long']
@@ -42,23 +42,22 @@ const captainSchema = new mongoose.Schema({
             required: true,
             minlength: [3, 'Vehicle color must be at least 3 characters long']  
         },
-        plateNumber:{
+        plate:{
             type: String,
             required: true,
             unique: true,
             minlength: [3, 'Plate number must be at least 3 characters long']
-    },
-    capacity:{
-        type: Number,
-        required: true,
-        min: [1, 'Capacity must be at least 1'],
-        
-    },
-    vehicleType: {
-        type: String,
-        required: true,
-        enum: ['bike', 'car', 'auto'],
-    }
+        },
+        capacity:{
+            type: Number,
+            required: true,
+            min: [1, 'Capacity must be at least 1'],
+        },
+        vehicleType: {
+            type: String,
+            required: true,
+            enum: ['bike', 'car', 'auto'],
+        }
     },
     location:{
         lat:{

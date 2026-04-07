@@ -10,6 +10,9 @@ import UserProtectWrapper from './pages/UserProtectWrapper.jsx'
 import UserLogout from './pages/UserLogout.jsx'
 import CaptainHome from './pages/CaptainHome.jsx'
 import CaptainProtectWrapper from './pages/CaptainProtectWrapper.jsx'
+import Riding from './pages/Riding.jsx'
+import CaptainRiding from './pages/CaptainRiding.jsx'
+import 'remixicon/fonts/remixicon.css'
 
 const App = () => {
   return (
@@ -18,8 +21,12 @@ const App = () => {
       <Route path='/' element={<Start />} />
       <Route path='/captainLogin' element={<CaptainLogin />} />
       <Route path='/captainSignup' element={<CaptainSignup />} />
+      <Route path='/captain-riding' element={<CaptainRiding />} />
       <Route path='/userLogin' element={<UserLogin />} />
       <Route path='/userSignup' element={<UserSignup />} />
+      <Route path='/riding' element={<Riding />} />
+
+
       <Route path='/home' element={
         <UserProtectWrapper>
           <Home />

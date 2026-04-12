@@ -11,7 +11,7 @@ const VehiclePanel = (props) => {
         <div 
         onClick={()=>{
             props.setconfermRidePanel(true);
-            props.createRide('car');
+            props.selectVehicle('car');
         }}
         className='mb-2 border-2 border-gray-300 active:border-black rounded-xl p-3 w-full flex items-center justify-between'>
                 <img className='h-12' src="https://tse4.mm.bing.net/th/id/OIP.ymjpxr4RPlwbLenCbbpYywHaE7?pid=Api&P=0&h=180" alt="car logo" />
@@ -26,7 +26,7 @@ const VehiclePanel = (props) => {
         <div
         onClick={()=>{
             props.setconfermRidePanel(true);
-            props.createRide('bike');
+            props.selectVehicle('bike');
         }} 
         className='mb-2 border-2 border-gray-300 active:border-black rounded-xl p-3 w-full flex items-center justify-between'>
                 <img className='h-12' src="https://tse1.mm.bing.net/th/id/OIP.RLXPc4XXmOPNyYAggjk9qwHaHa?pid=Api&P=0&h=180" />
@@ -41,7 +41,7 @@ const VehiclePanel = (props) => {
         <div
         onClick={()=>{
             props.setconfermRidePanel(true);
-            props.createRide('auto');
+            props.selectVehicle('auto');
         }}
          className='mb-2 border-2 border-gray-300 active:border-black rounded-xl p-3 w-full flex items-center justify-between'>
                 <img className='h-12' src="https://tse4.mm.bing.net/th/id/OIP.gERohywpalGF3NjolmHt5wHaE7?pid=Api&P=0&h=180" />

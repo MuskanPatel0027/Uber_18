@@ -106,3 +106,5 @@ export function useCaptain() {
     if (!ctx) throw new Error("useCaptain must be used within CaptainDataProvider");
     return ctx;
 }
+
+export default CaptainContext;

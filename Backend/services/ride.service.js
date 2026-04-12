@@ -70,20 +70,24 @@ module.exports.createRide = async ({userId, pickupLocation, dropoffLocation, veh
         throw new Error('User ID, pickup location, dropoff location, and vehicle type are required');
     }
 
-    const fareDetails = await getFare(pickupLocation, dropoffLocation, vehicleType);
+   const fares = await getFare(pickupLocation, dropoffLocation);
+
+const selectedFare = fares[vehicleType];
+
+if (!selectedFare) {
+    throw new Error('Invalid vehicle type');
+}
     
-    const ride = await rideModel.create({
-        userId,
-        pickupLocation,
-        dropoffLocation,
-        vehicleType,
-        otp: getOtp(4),
-        fare: fareDetails.totalFare,
-        distance: fareDetails.distance,
-        duration: fareDetails.time,
-        status: 'requested',
-        createdAt: new Date()
-    });
+   const ride = await rideModel.create({
+    userId,
+    pickupLocation,
+    dropoffLocation,
+    vehicleType,
+    otp: getOtp(4),
+    fare: selectedFare,   // ✅ correct
+    status: 'requested',
+    createdAt: new Date()
+});
 
     return ride;
 }

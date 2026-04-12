@@ -30,7 +30,8 @@ const Home = () => {
   const [confermRidePanel, setconfermRidePanel] = useState(false);
   const [vehicleFound, setvehicleFound] = useState(false);
   const [waitingForDriver, setwaitingForDriver] = useState(false);
-  const [fare, setfare] = useState({})
+  const [fare, setfare] = useState({});
+  const [vehicleType, setvehicleType] = useState(null)
 
 
    const submitHandler = (e) => {
@@ -195,7 +196,7 @@ const Home = () => {
   }
 }
 
-async function createRide(vehicleType){
+async function createRide(){
   const response = await axios.post(
       `${import.meta.env.VITE_BASE_URL}/rides/create`,
       {
@@ -309,15 +310,15 @@ async function createRide(vehicleType){
        
      
        <div ref={vehiclePanelRef} className='bg-white translate-y-full w-full fixed z-10 bottom-0 px-3 py-10 pt-142'>
-          <VehiclePanel createRide={createRide} fare={fare} setVehiclePanel={setVehiclePanel}  setconfermRidePanel={setconfermRidePanel} />
+          <VehiclePanel selectVehicle={setvehicleType} fare={fare} setVehiclePanel={setVehiclePanel}  setconfermRidePanel={setconfermRidePanel} />
        </div>
 
        <div ref={confermRideRef} className='bg-white translate-y-full w-full fixed z-10 bottom-0 px-3 py-6 pt-12'>
-         <ConfermRide setvehicleFound={setvehicleFound} setconfermRidePanel={setconfermRidePanel} />
+         <ConfermRide pickupLocation={pickupLocation} destination={destination} fare={fare} vehicleType={vehicleType} createRide={createRide}  setvehicleFound={setvehicleFound} setconfermRidePanel={setconfermRidePanel} />
        </div>
         
         <div ref={vehicleFoundRef} className='bg-white translate-y-full w-full fixed z-10 bottom-0 px-3 py-6 pt-12'>
-         <LookingForDriver setvehicleFound={setvehicleFound} />
+         <LookingForDriver  pickupLocation={pickupLocation} destination={destination} fare={fare} vehicleType={vehicleType} createRide={createRide} setvehicleFound={setvehicleFound} />
        </div>
 
        <div ref={waitingForDriverRef}  className='bg-white w-full fixed z-10 bottom-0 px-3 py-6 pt-12'>

@@ -298,6 +298,63 @@ curl -b "token=<jwt>" http://localhost:3000/users/logout
 
 ---
 
+# GET /maps/get-suggestions ✅
+
+**Description**
+Fetches address autocomplete suggestions for pickup or destination input. Requires authentication via either an httpOnly cookie `token` or an `Authorization: Bearer <token>` header.
+
+---
+
+## Endpoint
+- Method: GET
+- URL: /maps/get-suggestions
+- Headers:
+  - Optional: `Cookie: token=<jwt>` or `Authorization: Bearer <jwt>`
+
+## Query parameters
+- `query` (string) — required, minimum 3 characters.
+
+## Success response
+- **200 OK**
+
+Example HTTP response:
+
+```json
+[
+  { "name": "123 Main St, City, State", "lat": 12.3456, "lng": 65.4321 },
+  { "name": "124 Main St, City, State", "lat": 12.3478, "lng": 65.4333 }
+]
+```
+
+---
+
+## Error responses
+- **400 Bad Request** — validation error or missing/invalid query parameter
+```json
+{ "errors": [ { "msg": "Query must be at least 3 characters long", "param": "query" } ] }
+```
+
+- **401 Unauthorized** — missing or invalid auth token
+```json
+{ "error": "Access denied. No token provided." }
+```
+
+- **500 Internal Server Error** — GraphHopper/backend error
+```json
+{ "error": "Autocomplete failed: ..." }
+```
+
+---
+
+## Example curl
+
+```bash
+curl -X GET "http://localhost:3000/maps/get-suggestions?query=Main" \
+  -H "Authorization: Bearer <jwt>"
+```
+
+---
+
 # Captain routes ✅
 
 All `/captains` endpoints use `Content-Type: application/json` and require/return JSON. Authentication accepts either an httpOnly cookie `token` or `Authorization: Bearer <token>` header.

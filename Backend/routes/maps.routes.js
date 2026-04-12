@@ -16,9 +16,12 @@ router.get('/get-distance-time',
 )
 
 router.get('/get-suggestions',
-    query('query').isString().withMessage('Query must be a string').isLength({min:3}).withMessage('Query must be at least 3 characters long'),
-    AuthMiddleware.authUser, mapController.getAutoCompleteSuggestions
+
+    AuthMiddleware.authUser,
+    query('query').isString().isLength({min:3}),
+    query('query').notEmpty().withMessage('Query parameter cannot be empty'),
+     mapController.getAutoCompleteSuggestions
 
 )
 
-module.exports = router;
+module.exports = router

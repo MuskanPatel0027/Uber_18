@@ -5,16 +5,14 @@ const captainModel = require("../models/captain.model");
 
 
 module.exports.authUser = async (req, res, next) => {
-  // Support token from either an httpOnly cookie or Authorization header (Bearer <token>)
-  const cookieToken = req.cookies && req.cookies.token;
+  // Support token from Authorization header (Bearer <token>)
   const authHeader = req.headers && (req.headers.authorization || req.headers.Authorization);
 
   let token;
-  if (cookieToken) token = cookieToken;
-  else if (authHeader && authHeader.startsWith("Bearer ")) token = authHeader.split(" ")[1];
+  if (authHeader && authHeader.startsWith("Bearer ")) token = authHeader.split(" ")[1];
   else if (authHeader) token = authHeader; // allow raw token in header
 
-// const token = req.cookies.token || req.headers.authorization.split(' ')[1];
+  console.log('Received token:', token);
 
   if (!token) {
     return res.status(401).json({ error: "Access denied. No token provided." });
@@ -26,14 +24,17 @@ module.exports.authUser = async (req, res, next) => {
   }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Decoded token:', decoded);
     const user = await userModel.findById(decoded._id);
+    console.log('Found user:', user);
     if (!user) return res.status(401).json({ error: "Invalid token." });
 
     req.user = user;
     return next();
   } catch (err) {
-    return res.status(400).json({ message: "Invalid token." });
-  }
+  console.error("JWT ERROR:", err.message);
+  return res.status(400).json({ message: "Invalid token" });
+}
 };
 
 module.exports.authCaptain = async (req, res, next) => {

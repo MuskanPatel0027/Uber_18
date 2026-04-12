@@ -1,5 +1,5 @@
-import React from "react";
-import { useState,useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import axios from "axios";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import 'remixicon/fonts/remixicon.css'
@@ -21,16 +21,89 @@ const Home = () => {
 
   const [pickupLocation, setPickupLocation] = useState("");
   const [destination, setDestination] = useState("");
+  const [activeField, setActiveField] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
+  const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+  const [fetchError, setFetchError] = useState("");
   const [panelOpen, setPanelOpen] = useState(false);
   const [vehiclePanel, setVehiclePanel] = useState(false);
   const [confermRidePanel, setconfermRidePanel] = useState(false);
   const [vehicleFound, setvehicleFound] = useState(false);
   const [waitingForDriver, setwaitingForDriver] = useState(false);
+  const [fare, setfare] = useState({})
 
 
    const submitHandler = (e) => {
    e.preventDefault();
   }
+
+  const handleSuggestionSelect = (field, suggestion) => {
+    if (!field || !suggestion) return;
+
+    setPanelOpen(false);
+    setActiveField(null);
+    setSuggestions([]);
+    setFetchError("");
+
+    if (field === "pickup") {
+      setPickupLocation(suggestion);
+      return;
+    }
+
+    setDestination(suggestion);
+    if (pickupLocation.trim().length >= 3) {
+      setVehiclePanel(true);
+    }
+  };
+
+  const fetchSuggestions = async (query) => {
+    setIsFetchingSuggestions(true);
+    setFetchError("");
+    try {
+      const token = localStorage.getItem('token');
+     
+      const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/maps/get-suggestions`, {
+        params: { query },
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const results = Array.isArray(response.data)
+        ? response.data.map((item) => item.name || "")
+        : [];
+      setSuggestions(results);
+    } catch (error) {
+      setSuggestions([]);
+      setFetchError(
+        error.response?.data?.error || error.response?.data?.message || error.message || "Unable to load suggestions"
+      );
+    } finally {
+      setIsFetchingSuggestions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!panelOpen || !activeField) {
+      setSuggestions([]);
+      setFetchError("");
+      return;
+    }
+
+    const query = activeField === "pickup" ? pickupLocation : destination;
+    if (!query || query.trim().length < 3) {
+      setSuggestions([]);
+      setFetchError("");
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      fetchSuggestions(query.trim());
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [activeField, panelOpen, pickupLocation, destination]);
   
      useGSAP(function(){
         if(panelOpen){
@@ -96,9 +169,54 @@ const Home = () => {
           } )
         }},[vehicleFound]); 
 
- 
 
-  
+     async function findTrip() {
+  try {
+    setVehiclePanel(true);
+
+    const response = await axios.get(
+      `${import.meta.env.VITE_BASE_URL}/rides/fare`,
+      {
+        params: {
+          pickupLocation,
+          dropoffLocation: destination
+        },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      }
+    );
+
+   setfare(response.data);
+    console.log(response.data);
+
+  } catch (error) {
+    console.error("ERROR:", error.response?.data || error.message);
+  }
+}
+
+async function createRide(vehicleType){
+  const response = await axios.post(
+      `${import.meta.env.VITE_BASE_URL}/rides/create`,
+      {
+        pickupLocation,
+        dropoffLocation: destination,
+        vehicleType   // 🔥 important
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      console.log(response.data);
+        }
+      
+
+
+
+
+
+
   return (
     <div className='h-screen relative overflow-hidden'>
       <img className="w-16 absolute left-5 top-5"
@@ -131,15 +249,19 @@ const Home = () => {
           }>
             <div className="absolute h-16 w-1 top-[45%] left-10  bg-gray-900 rounded-full "></div>
             <input
-             onClick={()=>{
-              setPanelOpen(true)
-             }
-              
-            }
-            value={pickupLocation}
-            onChange={(e)=>{
-              setPickupLocation(e.target.value);
-            }}
+              onFocus={() => {
+                setPanelOpen(true);
+                setActiveField("pickup");
+              }}
+              onClick={() => {
+                setPanelOpen(true);
+                setActiveField("pickup");
+              }}
+              value={pickupLocation}
+              onChange={(e) => {
+                setActiveField("pickup");
+                setPickupLocation(e.target.value);
+              }}
               className="bg-[#eee] px-12 py-2 text-lg rounded-lg mt-5 w-full"
               type="text"
               id="pickup"
@@ -147,13 +269,17 @@ const Home = () => {
               placeholder="Add pick-up location"
             />
             <input
-            onClick={()=>{
-              setPanelOpen(true)
-             }
-              
-            }
+              onFocus={() => {
+                setPanelOpen(true);
+                setActiveField("destination");
+              }}
+              onClick={() => {
+                setPanelOpen(true);
+                setActiveField("destination");
+              }}
               value={destination}
-              onChange={(e)=>{
+              onChange={(e) => {
+                setActiveField("destination");
                 setDestination(e.target.value);
               }}
               className="bg-[#eee] px-12 py-2 text-lg rounded-lg mt-3 w-full"
@@ -163,17 +289,27 @@ const Home = () => {
               placeholder="Enter your destination"
             />
           </form>
+         <button onClick={findTrip} className="bg-black text-white w-full mt-3 px-6 py-2 rounded-lg hover:bg-gray-800 transition duration-200">
+  Find Ride
+</button>
         </div>
 
         <div className="h-0 bg-white"
         ref={panelRef}>
-            <LocationSearchPanels setPanelOpen={setPanelOpen} setVehiclePanel={setVehiclePanel} />
+            <LocationSearchPanels
+              activeField={activeField}
+              suggestions={suggestions}
+              isLoading={isFetchingSuggestions}
+              error={fetchError}
+              onSelectSuggestion={handleSuggestionSelect}
+              setPanelOpen={setPanelOpen}
+            />
         </div>
       </div>
        
      
        <div ref={vehiclePanelRef} className='bg-white translate-y-full w-full fixed z-10 bottom-0 px-3 py-10 pt-142'>
-          <VehiclePanel setVehiclePanel={setVehiclePanel}  setconfermRidePanel={setconfermRidePanel} />
+          <VehiclePanel createRide={createRide} fare={fare} setVehiclePanel={setVehiclePanel}  setconfermRidePanel={setconfermRidePanel} />
        </div>
 
        <div ref={confermRideRef} className='bg-white translate-y-full w-full fixed z-10 bottom-0 px-3 py-6 pt-12'>
@@ -190,6 +326,6 @@ const Home = () => {
         
     </div>
   );
-};
+}
 
 export default Home;

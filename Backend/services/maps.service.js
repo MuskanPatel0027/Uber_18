@@ -1,5 +1,6 @@
 const axios = require('axios');
 const qs = require('qs'); // 👈 install: npm install qs
+const  captainModel = require('../models/captain.model');
 
 const graphhopperKey = process.env.GRAPHHOPPER_API_KEY;
 
@@ -219,4 +220,32 @@ module.exports.getAutoCompleteSuggestions = async (query) => {
 
     throw new Error(`Autocomplete failed: ${message}`);
   }
+};
+
+
+module.exports.getCaptainsInTheRadius = async (location, radius) => {
+  if (
+    !location ||
+    typeof location.lat !== "number" ||
+    typeof location.lng !== "number"
+  ) {
+    throw new Error("Invalid location provided. Must have lat and lng as numbers.");
+  }
+
+  // radius in KM → convert to radians
+  const radiusInRadians = radius / 6371; // Earth radius = 6371 km
+
+  const captains = await captainModel.find({
+    location: {
+      $geoWithin: {
+        $centerSphere: [
+          [location.lng, location.lat], // [lng, lat]
+          radiusInRadians
+        ]
+      }
+    },
+    status: "active" // optional but recommended (only available captains)
+  });
+
+  return captains;
 };

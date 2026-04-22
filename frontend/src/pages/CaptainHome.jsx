@@ -3,10 +3,11 @@ import  { Link } from 'react-router-dom'
 import CaptainDetail from '../assets/Components/CaptainDetail'
 import RidePopUp from '../assets/Components/RidePopUp'
 import ConfermridePopupPanel from '../assets/Components/ConfermridePopupPanel'
-import { useState,useRef } from "react";
+import { useState,useRef, useEffect, useContext } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
-
+import {useSocket} from "../Context/SocketContext";
+import { CaptainDataContext } from '../Context/CaptainContext' 
 
 
 const CaptainHome = () => {
@@ -15,6 +16,49 @@ const CaptainHome = () => {
 
   const ridePopupPanelRef = useRef(null);
   const confermRidePopupPanelRef = useRef(null);
+
+const { sendMessage,socket } = useSocket();
+  const { captain } = useContext(CaptainDataContext);
+
+  useEffect(() => {
+  if (captain?._id) {
+    sendMessage("join", {
+      userId: captain._id,
+      role: "captain"
+    });
+
+    const updateLocationInterval = setInterval(() => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const location = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          sendMessage("update-location-captain", {
+            captainId: captain._id,
+            location,
+          });
+          console.log(location);
+        });
+      } else {
+        console.error("Geolocation is not supported by this browser.");
+      } }, 10000); // Update location every 5 seconds
+  }
+}, [captain]);
+
+useEffect(() => {
+  if (!socket) return;
+
+  socket.on('new-ride', (data) => {
+    console.log(data);
+  });
+
+  // cleanup (VERY important)
+  return () => {
+    socket.off('new-ride');
+  };
+}, [socket]);
+   
 
     useGSAP(function(){
         if(ridePopupPanel){

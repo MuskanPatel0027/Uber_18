@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useContext } from "react";
 import axios from "axios";
 import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
@@ -8,6 +8,9 @@ import VehiclePanel from "../assets/Components/VehiclePanel";
 import ConfermRide from "../assets/Components/ConfermRide";
 import LookingForDriver from "../assets/Components/LookingForDriver";
 import WaitingForDriver from "../assets/Components/WaitingForDriver";
+import {useSocket} from "../Context/SocketContext";
+import { UserDataContext } from "../Context/UserContext";
+
 
 const Home = () => {
  
@@ -32,6 +35,14 @@ const Home = () => {
   const [waitingForDriver, setwaitingForDriver] = useState(false);
   const [fare, setfare] = useState({});
   const [vehicleType, setvehicleType] = useState(null)
+const {sendMessage, receiveMessage } = useSocket();
+const { user } = useContext(UserDataContext);
+
+useEffect(() => {
+  console.log(user)
+  sendMessage("join", { userId: user._id, role: "user" });
+},[user])
+
 
 
    const submitHandler = (e) => {
